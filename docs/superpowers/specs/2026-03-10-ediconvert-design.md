@@ -23,32 +23,34 @@ This creates a massive integration gap. Companies like Home Depot, SRS, and GMS 
 
 ### Layer 1: TypeScript SDK (`@ediconvert/sdk`)
 
-Developer-facing interface. Stripe-like API design.
+The SDK operates in two modes:
+
+- **Local mode** (no API key required): `parse()` and `generate()` run entirely in-process using `@ediconvert/core`. No network calls. Useful for CLI tools, scripts, and self-hosted setups.
+- **Gateway mode** (API key required): Resource methods like `invoices.list()` and `orders.create()` make HTTP calls to a gateway instance (self-hosted or cloud). Webhooks are delivered as HTTP POST callbacks to a URL you configure.
 
 ```typescript
 import { EDIConvert } from '@ediconvert/sdk';
 
-const edi = new EDIConvert({ apiKey: 'edi_live_...' });
+// Local mode — no API key, pure parsing/generation
+const edi = new EDIConvert();
+const invoice = await edi.parse(rawEdiString);   // local, CPU-only
+const ediDoc = await edi.generate({ type: 'purchase-order', ... }); // local
 
-// Parse raw EDI into clean JSON
-const invoice = await edi.parse(rawEdiString);
+// Gateway mode — connects to a running gateway
+const edi = new EDIConvert({
+  apiKey: 'edi_live_...',
+  gateway: 'https://gateway.yourcompany.com'
+});
 
-// List invoices from a trading partner
 const invoices = await edi.invoices.list({
   partner: 'home-depot',
   since: '2026-01-01'
 });
 
-// Generate EDI from structured data
-const ediDoc = await edi.generate({
-  type: 'purchase-order',
-  partner: 'srs',
-  items: [{ sku: 'SHG-001', qty: 500 }]
-});
-
-// Webhooks (Stripe-style event system)
-edi.on('invoice.received', (invoice) => {
-  console.log(`New invoice: $${invoice.total}`);
+// Webhook registration (HTTP POST callbacks, configured via gateway API)
+await edi.webhooks.create({
+  url: 'https://yourapp.com/hooks/edi',
+  events: ['invoice.received', 'order.created']
 });
 ```
 
@@ -81,20 +83,22 @@ The spec lives as an OpenAPI 3.x YAML document with JSON Schema definitions for 
 
 Bidirectional EDI-to-OCEX conversion engine.
 
-- Parses EDI X12 and EDIFACT documents into OCEX JSON
-- Generates valid EDI documents from OCEX JSON
-- Trading partner profile management (each partner has quirks)
-- Validation engine enforcing segment/element rules per transaction set
-- Mapping rules stored as declarative config (not hardcoded)
+- Parses EDI X12 documents into OCEX JSON (EDIFACT support deferred to post-v1)
+- Generates valid EDI X12 documents from OCEX JSON
+- Trading partner profile management — profiles define: delimiter overrides, segment allowlists/denylists, endpoint URLs, and partner-specific field mappings
+- Validation engine enforcing segment/element rules per transaction set. On validation failure, returns structured errors with segment location, rule violated, and suggested fix
+- Mapping rules stored as YAML config files (not hardcoded). Each transaction set has a YAML file defining segment-to-field mappings, enabling community contributions without code changes
 
 ### Layer 4: Gateway Server (`@ediconvert/gateway`)
 
 Self-hostable Express.js server that bridges legacy and modern systems.
 
-- **Inbound:** Receives EDI via AS2/SFTP → parses → fires webhooks
-- **Outbound:** Receives API calls → generates EDI → sends via AS2/SFTP
-- **Dashboard:** Web UI for monitoring transactions
-- **Partner management:** Configure trading partner connections
+- **Inbound:** Receives EDI via SFTP → parses → fires webhook (HTTP POST) to configured URLs. AS2 support deferred to post-v1 due to protocol complexity (MDN receipts, certificate exchange).
+- **Outbound:** Receives API calls → generates EDI → sends via SFTP
+- **Dashboard:** Server-rendered HTML status pages (transaction log, partner status, error log). Not a full SPA — minimal frontend footprint for v1.
+- **Partner management:** Configure trading partner connections via API and config files
+- **Storage:** SQLite by default (zero-config), with a pluggable adapter interface for Postgres in production deployments. Stores transaction log, parsed documents, and partner configs.
+- **Auth:** API key-based authentication. Keys are generated and managed via CLI (`ediconvert keys create`). Keys are scoped per partner or global. No external auth service dependency for self-hosted.
 
 ## Project Structure
 
@@ -130,7 +134,7 @@ TypeScript monorepo managed with npm workspaces. Each package is independently p
 - **Testing:** Vitest
 - **Linting:** ESLint + Prettier
 - **Build:** tsup (fast TypeScript bundler)
-- **Docs:** VitePress or similar
+- **Docs:** VitePress
 
 ## Revenue Model
 
@@ -150,10 +154,56 @@ TypeScript monorepo managed with npm workspaces. Each package is independently p
 - Priority support and SLAs
 - Enterprise SSO and team management
 
+## Protocol Versioning
+
+OCEX uses URL-based versioning (`/v1/invoices`, `/v2/invoices`). The spec itself follows semantic versioning (e.g., `ocex-1.2.0`). Breaking changes increment the URL version. Non-breaking additions (new optional fields, new endpoints) increment the spec minor version within the same URL version.
+
+## Error Handling
+
+All layers return structured errors following a consistent schema:
+
+```json
+{
+  "error": {
+    "code": "PARSE_INVALID_SEGMENT",
+    "message": "Unknown segment 'ZZZ' at position 14",
+    "location": { "segment": "ZZZ", "position": 14, "line": 3 },
+    "suggestion": "Did you mean 'ZA'? Check trading partner spec for allowed segments."
+  }
+}
+```
+
+Error categories: `PARSE_*` (malformed EDI), `VALIDATE_*` (structurally valid but semantically wrong), `PARTNER_*` (partner-specific rule violation), `GATEWAY_*` (connectivity/auth errors).
+
+## Security
+
+- All gateway API endpoints require TLS (HTTPS). The gateway refuses to start with HTTP in production mode.
+- SFTP connections use key-based authentication (no password auth).
+- API keys are stored hashed (bcrypt). Raw keys are shown once at creation.
+- Parsed documents containing PII (healthcare extensions) are flagged and can be configured for encryption at rest via the storage adapter.
+- The core parsing library has no network access and no side effects — safe to run on untrusted input.
+
+## V1 Scope
+
+**In scope:**
+- X12 transaction sets: 810, 850, 832, 856, 997
+- SFTP transport (inbound and outbound)
+- Core SDK (local + gateway modes)
+- CLI tool with commands: `parse`, `validate`, `generate`, `keys`
+- Gateway with SQLite storage and webhook delivery
+- OCEX OpenAPI v1 spec for the five core document types
+
+**Deferred to post-v1:**
+- EDIFACT support
+- AS2 transport
+- Industry extensions (healthcare, construction, retail)
+- Dashboard UI beyond basic status pages
+- Postgres storage adapter
+
 ## Success Criteria
 
 1. `npm install @ediconvert/sdk` works and provides a clean, documented API
-2. Can parse any valid X12 document into OCEX JSON and back without data loss
+2. Can parse the five core X12 transaction sets (810, 850, 832, 856, 997) into OCEX JSON and back with semantic equivalence (business data preserved; envelope metadata like ISA/GS control numbers may be regenerated)
 3. OCEX OpenAPI spec is complete enough that codegen tools produce useful clients
 4. Gateway can receive EDI via SFTP and expose it as REST API + webhooks
 5. At least one real-world EDI document (construction invoice 810) round-trips cleanly
