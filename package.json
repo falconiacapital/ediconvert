@@ -5,7 +5,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces",
+    "build": "npm run build -w packages/core && npm run build -w packages/gateway && npm run build -w packages/sdk && npm run build -w packages/cli",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint 'packages/*/src/**/*.ts'",

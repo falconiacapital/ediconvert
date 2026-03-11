@@ -1,6 +1,7 @@
 {
   "name": "@ediconvert/cli",
   "version": "0.1.0",
+  "type": "module",
   "description": "CLI tool for EDI parsing, validation, and generation",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -9,7 +10,7 @@
   },
   "files": ["dist"],
   "scripts": {
-    "build": "tsup src/index.ts --format cjs --dts",
+    "build": "tsup src/index.ts --format esm --dts",
     "dev": "tsup src/index.ts --format cjs --dts --watch"
   },
   "dependencies": {

@@ -173,7 +173,7 @@ export function translateToOcex(raw: string): OcexDocument {
     // Compute totalPrice for each line item that has both quantity and unitPrice
     for (const item of lineItems) {
       if (item.quantity !== undefined && item.unitPrice !== undefined && item.totalPrice === undefined) {
-        (item as Record<string, unknown>).totalPrice = item.quantity * item.unitPrice;
+        (item as unknown as Record<string, unknown>).totalPrice = item.quantity * item.unitPrice;
       }
     }
     if (result.type === 'catalog') {
