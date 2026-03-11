@@ -9,4 +9,3 @@ dist/
 CLAUDE.md
 *.tsbuildinfo
 docs/superpowers/
-tsconfig.cli-test.json
