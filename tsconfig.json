@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.base.json",
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/sdk" },
+    { "path": "packages/gateway" },
+    { "path": "packages/cli" }
+  ],
+  "compilerOptions": {
+    "composite": true
+  }
+}

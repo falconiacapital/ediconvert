@@ -1,0 +1,13 @@
+{
+  "name": "@ediconvert/core",
+  "version": "0.1.0",
+  "description": "EDI X12 parser/generator and OCEX translation engine",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch"
+  },
+  "license": "MIT"
+}

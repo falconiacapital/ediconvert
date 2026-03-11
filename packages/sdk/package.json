@@ -1,0 +1,16 @@
+{
+  "name": "@ediconvert/sdk",
+  "version": "0.1.0",
+  "description": "Stripe-like TypeScript SDK for EDI/OCEX",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch"
+  },
+  "dependencies": {
+    "@ediconvert/core": "*"
+  },
+  "license": "MIT"
+}

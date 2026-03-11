@@ -1,0 +1,19 @@
+{
+  "name": "@ediconvert/cli",
+  "version": "0.1.0",
+  "description": "CLI tool for EDI parsing, validation, and generation",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "ediconvert": "./dist/index.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs --dts",
+    "dev": "tsup src/index.ts --format cjs --dts --watch"
+  },
+  "dependencies": {
+    "@ediconvert/core": "*"
+  },
+  "license": "MIT"
+}
