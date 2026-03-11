@@ -13,7 +13,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "mappings"
   ],
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts",

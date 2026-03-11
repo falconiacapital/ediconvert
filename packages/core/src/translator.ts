@@ -165,11 +165,18 @@ export function translateToOcex(raw: string): OcexDocument {
 
   // Extract line items if configured
   if (mapping.lineItems) {
-    result.lineItems = extractLineItems(
+    const lineItems = extractLineItems(
       segments,
       mapping.lineItems.loopSegment,
       mapping.lineItems.fields,
     );
+    // Compute totalPrice for each line item that has both quantity and unitPrice
+    for (const item of lineItems) {
+      if (item.quantity !== undefined && item.unitPrice !== undefined && item.totalPrice === undefined) {
+        (item as Record<string, unknown>).totalPrice = item.quantity * item.unitPrice;
+      }
+    }
+    result.lineItems = lineItems;
   }
 
   // Invoice-specific defaults
@@ -184,7 +191,24 @@ export function translateToOcex(raw: string): OcexDocument {
 
   // Derive a stable document id from ISA control number
   result.id = envelope.isaControlNumber || 'unknown';
-  result.version = '1.0';
+  result.version = 'ocex-1.0.0';
+
+  // Populate sender/receiver from ISA envelope if not already set by field mappings
+  const isaSegment = segments.find((s) => s.tag === 'ISA');
+  if (isaSegment) {
+    const isaSenderId = isaSegment.elements[5]?.value?.trim() ?? '';
+    const isaReceiverId = isaSegment.elements[7]?.value?.trim() ?? '';
+    if (!result.sender) {
+      result.sender = { id: isaSenderId, name: isaSenderId };
+    } else if (!(result.sender as Record<string, unknown>).id) {
+      (result.sender as Record<string, unknown>).id = isaSenderId;
+    }
+    if (!result.receiver) {
+      result.receiver = { id: isaReceiverId, name: isaReceiverId };
+    } else if (!(result.receiver as Record<string, unknown>).id) {
+      (result.receiver as Record<string, unknown>).id = isaReceiverId;
+    }
+  }
 
   return result as unknown as OcexDocument;
 }

@@ -26,7 +26,7 @@ export interface OcexLineItem {
   vendorPartNumber?: string;
 }
 
-interface OcexDocumentBase {
+export interface OcexDocumentBase {
   id: string;
   version: string;
   sender: OcexParty;
