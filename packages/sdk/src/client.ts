@@ -1,5 +1,6 @@
 import { translateToOcex, translateToX12, GatewayError } from '@ediconvert/core';
 import type { OcexDocument } from '@ediconvert/core';
+import { HttpClient } from './http.js';
 
 export interface EDIConvertConfig {
   apiKey?: string;
@@ -14,18 +15,51 @@ function requireGateway(config: EDIConvertConfig): void {
 
 export class EDIConvert {
   private config: EDIConvertConfig;
-  constructor(config: EDIConvertConfig = {}) { this.config = config; }
+  private http?: HttpClient;
+
+  constructor(config: EDIConvertConfig = {}) {
+    this.config = config;
+    if (config.apiKey && config.gateway) {
+      this.http = new HttpClient(config.gateway, config.apiKey);
+    }
+  }
 
   async parse(raw: string): Promise<OcexDocument> { return translateToOcex(raw); }
   async generate(doc: OcexDocument): Promise<string> { return translateToX12(doc); }
 
   get invoices() {
-    return { list: async (_params: Record<string, unknown>) => { requireGateway(this.config); return []; } };
+    const config = this.config;
+    const http = this.http;
+    return {
+      list: async (params: Record<string, unknown>) => {
+        if (!http) { requireGateway(config); return []; }
+        const result = await http.get<{ data: any[] }>('/v1/invoices', params as Record<string, string>);
+        return result.data;
+      },
+    };
   }
+
   get orders() {
-    return { list: async (_params: Record<string, unknown>) => { requireGateway(this.config); return []; } };
+    const config = this.config;
+    const http = this.http;
+    return {
+      list: async (params: Record<string, unknown>) => {
+        if (!http) { requireGateway(config); return []; }
+        const result = await http.get<{ data: any[] }>('/v1/orders', params as Record<string, string>);
+        return result.data;
+      },
+    };
   }
+
   get webhooks() {
-    return { create: async (_params: Record<string, unknown>) => { requireGateway(this.config); return {}; } };
+    const config = this.config;
+    const http = this.http;
+    return {
+      create: async (params: Record<string, unknown>) => {
+        if (!http) { requireGateway(config); return {}; }
+        const result = await http.post<{ data: any }>('/v1/webhooks', params);
+        return result.data;
+      },
+    };
   }
 }
