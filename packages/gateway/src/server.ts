@@ -47,7 +47,7 @@ export function createApp(config: AppConfig): express.Express {
   function resourceRoutes(typeName: string, path: string) {
     app.get(path, (req, res) => {
       const limitParam = req.query.limit;
-      const limit = limitParam !== undefined ? Number(limitParam) : undefined;
+      const limit = limitParam !== undefined ? Math.min(Math.max(1, Number(limitParam) || 20), 1000) : undefined;
       const docs = config.storage.listDocuments({
         type: typeName,
         partnerId: req.query.partner as string,
@@ -106,6 +106,17 @@ export function createApp(config: AppConfig): express.Express {
     const { url, events, secret } = req.body as { url?: string; events?: string[]; secret?: string };
     if (!url || !Array.isArray(events) || events.length === 0) {
       res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'url and events are required' } });
+      return;
+    }
+    // Validate webhook URL — must be http or https
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'webhook url must use http or https' } });
+        return;
+      }
+    } catch {
+      res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'webhook url is not a valid URL' } });
       return;
     }
     webhookManager.register({ url, events, secret });

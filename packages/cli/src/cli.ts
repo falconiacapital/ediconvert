@@ -41,7 +41,13 @@ async function run(): Promise<void> {
       const file = args[1];
       if (!file) { console.error('Error: file path required'); process.exit(1); }
       const json = readFileSync(file, 'utf-8');
-      const doc = JSON.parse(json);
+      let doc;
+      try {
+        doc = JSON.parse(json);
+      } catch {
+        console.error('Error: file does not contain valid JSON');
+        process.exit(1);
+      }
       const edi = translateToX12(doc);
       console.log(edi);
       break;

@@ -55,9 +55,9 @@ describe('WebhookManager', () => {
   });
 
   it('uses provided secret when registering', () => {
-    manager.register({ url: `http://localhost:${serverPort}/hook`, events: ['invoice.received'], secret: 'my-secret' });
+    manager.register({ url: `http://localhost:${serverPort}/hook`, events: ['invoice.received'], secret: 'my-secret-long-enough' });
     const hooks = storage.listWebhooks();
-    expect(hooks[0].secret).toBe('my-secret');
+    expect(hooks[0].secret).toBe('my-secret-long-enough');
   });
 
   it('delivers webhook on matching event', async () => {
@@ -75,7 +75,7 @@ describe('WebhookManager', () => {
   });
 
   it('includes X-EDI-Signature header on delivery', async () => {
-    const secret = 'test-secret-key';
+    const secret = 'test-secret-key!!';
     manager.register({ url: `http://localhost:${serverPort}/hook`, events: ['invoice.received'], secret });
     await manager.deliver('invoice.received', { type: 'invoice', total: 200 });
 

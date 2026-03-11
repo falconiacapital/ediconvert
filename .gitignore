@@ -9,3 +9,5 @@ dist/
 CLAUDE.md
 *.tsbuildinfo
 docs/superpowers/
+.firecrawl/
+.playwright-mcp/

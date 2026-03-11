@@ -8,6 +8,10 @@ import type { OcexDocument, OcexLineItem } from './types.js';
 /** Set a value on an object using a dot-path string, e.g. "sender.id" */
 function setNestedField(obj: Record<string, unknown>, path: string, value: unknown): void {
   const parts = path.split('.');
+  // Guard against prototype pollution
+  for (const part of parts) {
+    if (part === '__proto__' || part === 'constructor' || part === 'prototype') return;
+  }
   let current: Record<string, unknown> = obj;
   for (let i = 0; i < parts.length - 1; i++) {
     const key = parts[i];

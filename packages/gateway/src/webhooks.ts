@@ -26,7 +26,9 @@ export class WebhookManager {
   }
 
   register(options: RegisterWebhookOptions): void {
-    const secret = options.secret ?? randomBytes(32).toString('hex');
+    const secret = options.secret && options.secret.length >= 16
+      ? options.secret
+      : randomBytes(32).toString('hex');
     this.storage.saveWebhook({
       id: randomUUID(),
       url: options.url,

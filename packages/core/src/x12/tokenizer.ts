@@ -7,6 +7,10 @@ export function detectDelimiters(raw: string): X12Delimiters {
     throw new ParseError('MISSING_ISA', 'PARSE_MISSING_ISA: EDI document must start with ISA segment');
   }
 
+  if (trimmed.length < 106) {
+    throw new ParseError('INVALID_ISA', 'ISA segment is too short — expected at least 106 characters');
+  }
+
   // ISA is fixed-length: element separator is char at position 3
   const element = trimmed[3];
   // Component separator is at ISA16 (position 104)
