@@ -1,1 +1,2 @@
-export const VERSION = '0.1.0';
+#!/usr/bin/env node
+import './cli.js';
