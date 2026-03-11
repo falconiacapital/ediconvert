@@ -1,1 +1,2 @@
-export const VERSION = '0.1.0';
+export { EDIConvert } from './client.js';
+export type { EDIConvertConfig } from './client.js';
