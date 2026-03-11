@@ -2,17 +2,28 @@ import express from 'express';
 import type { Storage } from './storage.js';
 import { translateToOcex } from '@ediconvert/core';
 import { WebhookManager } from './webhooks.js';
+import type { AuthManager } from './auth.js';
+import { addDashboardRoutes } from './dashboard.js';
 
 interface AppConfig {
   storage: Storage;
   requireAuth?: boolean;
+  authManager?: AuthManager;
+  webhookManager?: WebhookManager;
 }
 
 export function createApp(config: AppConfig): express.Express {
   const app = express();
   app.use(express.json({ limit: '10mb' }));
 
-  const webhookManager = new WebhookManager(config.storage);
+  const webhookManager = config.webhookManager ?? new WebhookManager(config.storage);
+
+  // Apply auth middleware to all API routes when requireAuth is enabled
+  if (config.requireAuth && config.authManager) {
+    app.use('/v1', config.authManager.middleware());
+  }
+
+  addDashboardRoutes(app, config.storage);
 
   app.post('/v1/parse', (req, res) => {
     try {

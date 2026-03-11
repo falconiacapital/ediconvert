@@ -4,10 +4,12 @@ import { dirname, resolve } from 'node:path';
 import YAML from 'yaml';
 import type { TransactionMapping } from './types.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// Support both ESM (import.meta.url) and CJS (__dirname) contexts
+const _dirname: string = (typeof __dirname !== 'undefined')
+  ? __dirname
+  : dirname(fileURLToPath(import.meta.url));
 
-export const MAPPINGS_DIR = resolve(__dirname, '../../../../mappings/x12');
+export const MAPPINGS_DIR = resolve(_dirname, '../../../../mappings/x12');
 
 export function loadMapping(filePath: string): TransactionMapping {
   const content = readFileSync(filePath, 'utf-8');
