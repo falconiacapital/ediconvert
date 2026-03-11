@@ -1,0 +1,207 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ocex.io/schemas/shipment.json",
+  "title": "OcexShipment",
+  "description": "An OCEX advance ship notice document, equivalent to EDI 856. Notifies a buyer that goods have been shipped and provides carrier and tracking details.",
+  "type": "object",
+  "required": [
+    "id",
+    "version",
+    "type",
+    "sender",
+    "receiver",
+    "documentDate",
+    "shipmentId",
+    "orderRef",
+    "carrier",
+    "shipDate",
+    "shipFrom",
+    "shipTo",
+    "lineItems"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this document."
+    },
+    "version": {
+      "type": "string",
+      "description": "OCEX protocol version string (e.g. \"1.0\")."
+    },
+    "type": {
+      "type": "string",
+      "const": "shipment",
+      "description": "Discriminator field identifying this as a shipment document."
+    },
+    "sender": {
+      "$ref": "#/$defs/OcexParty",
+      "description": "The party sending this shipment notice (typically the vendor/shipper)."
+    },
+    "receiver": {
+      "$ref": "#/$defs/OcexParty",
+      "description": "The party receiving this shipment notice (typically the buyer)."
+    },
+    "documentDate": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO 8601 date on which this shipment notice was created (YYYY-MM-DD)."
+    },
+    "shipmentId": {
+      "type": "string",
+      "description": "Vendor-assigned shipment identifier, unique within the sender's system."
+    },
+    "orderRef": {
+      "type": "string",
+      "description": "Reference to the originating purchase order number."
+    },
+    "carrier": {
+      "type": "string",
+      "description": "Name or SCAC code of the carrier handling this shipment (e.g. \"UPS\", \"FEDEX\")."
+    },
+    "trackingNumber": {
+      "type": "string",
+      "description": "Optional carrier-assigned tracking number."
+    },
+    "shipDate": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO 8601 date on which goods were physically shipped (YYYY-MM-DD)."
+    },
+    "estimatedDelivery": {
+      "type": "string",
+      "format": "date",
+      "description": "Optional ISO 8601 estimated delivery date (YYYY-MM-DD)."
+    },
+    "shipFrom": {
+      "$ref": "#/$defs/OcexAddress",
+      "description": "Address from which the goods are being shipped."
+    },
+    "shipTo": {
+      "$ref": "#/$defs/OcexAddress",
+      "description": "Destination address for the shipped goods."
+    },
+    "lineItems": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/OcexLineItem" },
+      "minItems": 1,
+      "description": "One or more shipped line items."
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Arbitrary key-value metadata for extension or passthrough data."
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "OcexParty": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Party identifier (e.g. DUNS, GLN, or internal ID)."
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable party name."
+        },
+        "qualifier": {
+          "type": "string",
+          "description": "EDI qualifier indicating the ID type (e.g. \"01\" for DUNS)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "OcexAddress": {
+      "type": "object",
+      "required": ["street", "city", "state", "zip", "country"],
+      "properties": {
+        "street": {
+          "type": "string",
+          "description": "Primary street address line."
+        },
+        "street2": {
+          "type": "string",
+          "description": "Optional secondary address line (suite, floor, etc.)."
+        },
+        "city": {
+          "type": "string",
+          "description": "City name."
+        },
+        "state": {
+          "type": "string",
+          "description": "State, province, or region code."
+        },
+        "zip": {
+          "type": "string",
+          "description": "Postal / ZIP code."
+        },
+        "country": {
+          "type": "string",
+          "description": "ISO 3166-1 alpha-2 country code (e.g. \"US\")."
+        }
+      },
+      "additionalProperties": false
+    },
+    "OcexLineItem": {
+      "type": "object",
+      "required": [
+        "lineNumber",
+        "sku",
+        "description",
+        "quantity",
+        "unitOfMeasure",
+        "unitPrice",
+        "totalPrice"
+      ],
+      "properties": {
+        "lineNumber": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Sequential line number within the document."
+        },
+        "sku": {
+          "type": "string",
+          "description": "Vendor stock-keeping unit identifier."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable product or service description."
+        },
+        "quantity": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Quantity of the item shipped on this line."
+        },
+        "unitOfMeasure": {
+          "type": "string",
+          "description": "Unit of measure code (e.g. \"EA\" for each, \"CS\" for case)."
+        },
+        "unitPrice": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Price per single unit."
+        },
+        "totalPrice": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total price for this line (quantity * unitPrice)."
+        },
+        "upc": {
+          "type": "string",
+          "description": "Optional Universal Product Code."
+        },
+        "buyerPartNumber": {
+          "type": "string",
+          "description": "Buyer's internal part number for this item."
+        },
+        "vendorPartNumber": {
+          "type": "string",
+          "description": "Vendor's internal part number for this item."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

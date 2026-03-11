@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ocex.io/schemas/catalog.json",
+  "title": "OcexCatalog",
+  "description": "An OCEX product catalog document, equivalent to EDI 832. Represents a vendor's price/sales catalog transmitted to a buyer.",
+  "type": "object",
+  "required": [
+    "id",
+    "version",
+    "type",
+    "sender",
+    "receiver",
+    "documentDate",
+    "catalogId",
+    "effectiveDate",
+    "items"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this document."
+    },
+    "version": {
+      "type": "string",
+      "description": "OCEX protocol version string (e.g. \"1.0\")."
+    },
+    "type": {
+      "type": "string",
+      "const": "catalog",
+      "description": "Discriminator field identifying this as a catalog document."
+    },
+    "sender": {
+      "$ref": "#/$defs/OcexParty",
+      "description": "The party sending this catalog (typically the vendor)."
+    },
+    "receiver": {
+      "$ref": "#/$defs/OcexParty",
+      "description": "The party receiving this catalog (typically the buyer)."
+    },
+    "documentDate": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO 8601 date on which the catalog was generated (YYYY-MM-DD)."
+    },
+    "catalogId": {
+      "type": "string",
+      "description": "Vendor-assigned catalog identifier, unique within the sender's system."
+    },
+    "effectiveDate": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO 8601 date from which the catalog prices are effective (YYYY-MM-DD)."
+    },
+    "expirationDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Optional ISO 8601 date after which the catalog expires (YYYY-MM-DD)."
+    },
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/OcexLineItem" },
+      "minItems": 1,
+      "description": "One or more catalog items with pricing information."
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Arbitrary key-value metadata for extension or passthrough data."
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "OcexParty": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Party identifier (e.g. DUNS, GLN, or internal ID)."
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable party name."
+        },
+        "qualifier": {
+          "type": "string",
+          "description": "EDI qualifier indicating the ID type (e.g. \"01\" for DUNS)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "OcexLineItem": {
+      "type": "object",
+      "required": [
+        "lineNumber",
+        "sku",
+        "description",
+        "quantity",
+        "unitOfMeasure",
+        "unitPrice",
+        "totalPrice"
+      ],
+      "properties": {
+        "lineNumber": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Sequential line number within the catalog."
+        },
+        "sku": {
+          "type": "string",
+          "description": "Vendor stock-keeping unit identifier."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable product description."
+        },
+        "quantity": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Minimum order quantity or available quantity."
+        },
+        "unitOfMeasure": {
+          "type": "string",
+          "description": "Unit of measure code (e.g. \"EA\" for each, \"CS\" for case)."
+        },
+        "unitPrice": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Catalog price per single unit."
+        },
+        "totalPrice": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Extended price (quantity * unitPrice)."
+        },
+        "upc": {
+          "type": "string",
+          "description": "Optional Universal Product Code."
+        },
+        "buyerPartNumber": {
+          "type": "string",
+          "description": "Buyer's internal part number for cross-reference."
+        },
+        "vendorPartNumber": {
+          "type": "string",
+          "description": "Vendor's internal part number for cross-reference."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

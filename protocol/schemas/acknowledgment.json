@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ocex.io/schemas/acknowledgment.json",
+  "title": "OcexAcknowledgment",
+  "description": "An OCEX functional acknowledgment document, equivalent to EDI 997. Confirms receipt of a previously transmitted OCEX document and reports any validation errors.",
+  "type": "object",
+  "required": [
+    "id",
+    "version",
+    "type",
+    "sender",
+    "receiver",
+    "documentDate",
+    "referencedDocumentId",
+    "accepted",
+    "errors"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this acknowledgment document."
+    },
+    "version": {
+      "type": "string",
+      "description": "OCEX protocol version string (e.g. \"1.0\")."
+    },
+    "type": {
+      "type": "string",
+      "const": "acknowledgment",
+      "description": "Discriminator field identifying this as an acknowledgment document."
+    },
+    "sender": {
+      "$ref": "#/$defs/OcexParty",
+      "description": "The party sending this acknowledgment (the receiver of the original document)."
+    },
+    "receiver": {
+      "$ref": "#/$defs/OcexParty",
+      "description": "The party receiving this acknowledgment (the sender of the original document)."
+    },
+    "documentDate": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO 8601 date on which this acknowledgment was created (YYYY-MM-DD)."
+    },
+    "referencedDocumentId": {
+      "type": "string",
+      "description": "The `id` of the OCEX document being acknowledged."
+    },
+    "accepted": {
+      "type": "boolean",
+      "description": "True if the referenced document was accepted without fatal errors; false if it was rejected."
+    },
+    "errors": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/AcknowledgmentError" },
+      "description": "List of validation errors found in the referenced document. Empty array when accepted is true."
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Arbitrary key-value metadata for extension or passthrough data."
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "OcexParty": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Party identifier (e.g. DUNS, GLN, or internal ID)."
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable party name."
+        },
+        "qualifier": {
+          "type": "string",
+          "description": "EDI qualifier indicating the ID type (e.g. \"01\" for DUNS)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "AcknowledgmentError": {
+      "type": "object",
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Machine-readable error code (e.g. \"MISSING_FIELD\", \"INVALID_VALUE\")."
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable description of the validation error."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

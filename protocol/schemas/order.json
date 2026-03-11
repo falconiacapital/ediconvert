@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ocex.io/schemas/order.json",
+  "title": "OcexOrder",
+  "description": "An OCEX purchase order document, equivalent to EDI 850. Represents a buyer's request to a vendor to supply goods or services.",
+  "type": "object",
+  "required": [
+    "id",
+    "version",
+    "type",
+    "sender",
+    "receiver",
+    "documentDate",
+    "orderNumber",
+    "shipTo",
+    "lineItems",
+    "total"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this document."
+    },
+    "version": {
+      "type": "string",
+      "description": "OCEX protocol version string (e.g. \"1.0\")."
+    },
+    "type": {
+      "type": "string",
+      "const": "order",
+      "description": "Discriminator field identifying this as a purchase order document."
+    },
+    "sender": {
+      "$ref": "#/$defs/OcexParty",
+      "description": "The party sending this order (typically the buyer)."
+    },
+    "receiver": {
+      "$ref": "#/$defs/OcexParty",
+      "description": "The party receiving this order (typically the vendor)."
+    },
+    "documentDate": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO 8601 date on which the order was created (YYYY-MM-DD)."
+    },
+    "orderNumber": {
+      "type": "string",
+      "description": "Buyer-assigned purchase order number, unique within the sender's system."
+    },
+    "shipTo": {
+      "$ref": "#/$defs/OcexAddress",
+      "description": "Destination address for the ordered goods."
+    },
+    "billTo": {
+      "$ref": "#/$defs/OcexAddress",
+      "description": "Optional billing address if different from the ship-to address."
+    },
+    "lineItems": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/OcexLineItem" },
+      "minItems": 1,
+      "description": "One or more ordered line items."
+    },
+    "total": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Total order value."
+    },
+    "requestedDeliveryDate": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO 8601 date by which the buyer requests delivery (YYYY-MM-DD)."
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "Optional ISO 4217 currency code. Defaults to the trading partners' agreed currency when omitted."
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Arbitrary key-value metadata for extension or passthrough data."
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "OcexParty": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Party identifier (e.g. DUNS, GLN, or internal ID)."
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable party name."
+        },
+        "qualifier": {
+          "type": "string",
+          "description": "EDI qualifier indicating the ID type (e.g. \"01\" for DUNS)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "OcexAddress": {
+      "type": "object",
+      "required": ["street", "city", "state", "zip", "country"],
+      "properties": {
+        "street": {
+          "type": "string",
+          "description": "Primary street address line."
+        },
+        "street2": {
+          "type": "string",
+          "description": "Optional secondary address line (suite, floor, etc.)."
+        },
+        "city": {
+          "type": "string",
+          "description": "City name."
+        },
+        "state": {
+          "type": "string",
+          "description": "State, province, or region code."
+        },
+        "zip": {
+          "type": "string",
+          "description": "Postal / ZIP code."
+        },
+        "country": {
+          "type": "string",
+          "description": "ISO 3166-1 alpha-2 country code (e.g. \"US\")."
+        }
+      },
+      "additionalProperties": false
+    },
+    "OcexLineItem": {
+      "type": "object",
+      "required": [
+        "lineNumber",
+        "sku",
+        "description",
+        "quantity",
+        "unitOfMeasure",
+        "unitPrice",
+        "totalPrice"
+      ],
+      "properties": {
+        "lineNumber": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Sequential line number within the document."
+        },
+        "sku": {
+          "type": "string",
+          "description": "Vendor stock-keeping unit identifier."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable product or service description."
+        },
+        "quantity": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Quantity of the item."
+        },
+        "unitOfMeasure": {
+          "type": "string",
+          "description": "Unit of measure code (e.g. \"EA\" for each, \"CS\" for case)."
+        },
+        "unitPrice": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Price per single unit."
+        },
+        "totalPrice": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total price for this line (quantity * unitPrice)."
+        },
+        "upc": {
+          "type": "string",
+          "description": "Optional Universal Product Code."
+        },
+        "buyerPartNumber": {
+          "type": "string",
+          "description": "Buyer's internal part number for this item."
+        },
+        "vendorPartNumber": {
+          "type": "string",
+          "description": "Vendor's internal part number for this item."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,833 @@
+openapi: "3.1.0"
+
+info:
+  title: "OCEX — Open Commerce Exchange Protocol"
+  version: "1.0.0"
+  description: |
+    OCEX (Open Commerce Exchange) replaces legacy EDI with a REST-native protocol
+    for B2B supply-chain data exchange. Instead of fixed-width flat files sent over
+    AS2 or SFTP, trading partners exchange JSON documents over HTTPS using standard
+    HTTP verbs and status codes.
+
+    ## Document types (v1)
+
+    | OCEX type        | EDI equivalent | Description                              |
+    |------------------|---------------|------------------------------------------|
+    | `invoice`        | 810           | Request for payment from vendor to buyer |
+    | `order`          | 850           | Purchase order from buyer to vendor      |
+    | `catalog`        | 832           | Price/sales catalog from vendor          |
+    | `shipment`       | 856           | Advance ship notice (ASN)                |
+    | `acknowledgment` | 997           | Functional acknowledgment                |
+
+    ## Authentication
+
+    Every request must carry an API key in the `X-API-Key` header. Keys are issued
+    per trading-partner relationship and scoped to specific document types.
+
+    ## Versioning
+
+    All v1 endpoints are prefixed with `/v1/`. Breaking changes will be introduced
+    under a new version prefix (e.g. `/v2/`).
+
+    ## Error format
+
+    All error responses share a consistent envelope:
+
+    ```json
+    {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Field 'currency' is required for invoices.",
+        "location": "body.currency",
+        "suggestion": "Add a three-letter ISO 4217 currency code."
+      }
+    }
+    ```
+
+  contact:
+    name: "OCEX Protocol Maintainers"
+    url: "https://github.com/ocex-protocol/ediconvert"
+  license:
+    name: "MIT"
+    url: "https://opensource.org/licenses/MIT"
+
+servers:
+  - url: "http://localhost:3000"
+    description: "Default local development gateway"
+
+security:
+  - ApiKeyAuth: []
+
+tags:
+  - name: invoices
+    description: "EDI 810 — Invoice documents"
+  - name: orders
+    description: "EDI 850 — Purchase order documents"
+  - name: catalogs
+    description: "EDI 832 — Price/sales catalog documents"
+  - name: shipments
+    description: "EDI 856 — Advance ship notice documents"
+  - name: acknowledgments
+    description: "EDI 997 — Functional acknowledgment documents"
+  - name: parse
+    description: "Parse raw EDI X12 into OCEX JSON"
+
+paths:
+
+  # ---------------------------------------------------------------------------
+  # Invoices
+  # ---------------------------------------------------------------------------
+
+  /v1/invoices:
+    get:
+      operationId: listInvoices
+      summary: List invoices
+      description: Returns a paginated list of all invoice documents visible to the authenticated trading partner.
+      tags: [invoices]
+      parameters:
+        - $ref: "#/components/parameters/limitParam"
+        - $ref: "#/components/parameters/offsetParam"
+      responses:
+        "200":
+          description: Successful response — array of invoice documents.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Invoice"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    post:
+      operationId: createInvoice
+      summary: Create an invoice
+      description: Submit a new invoice document. The gateway validates the payload against the OCEX invoice schema before persisting it.
+      tags: [invoices]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Invoice"
+      responses:
+        "201":
+          description: Invoice created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Invoice"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /v1/invoices/{id}:
+    get:
+      operationId: getInvoice
+      summary: Get a single invoice
+      description: Returns one invoice document by its unique identifier.
+      tags: [invoices]
+      parameters:
+        - $ref: "#/components/parameters/idParam"
+      responses:
+        "200":
+          description: Invoice found.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Invoice"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ---------------------------------------------------------------------------
+  # Orders
+  # ---------------------------------------------------------------------------
+
+  /v1/orders:
+    get:
+      operationId: listOrders
+      summary: List purchase orders
+      description: Returns a paginated list of all purchase order documents visible to the authenticated trading partner.
+      tags: [orders]
+      parameters:
+        - $ref: "#/components/parameters/limitParam"
+        - $ref: "#/components/parameters/offsetParam"
+      responses:
+        "200":
+          description: Successful response — array of order documents.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Order"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    post:
+      operationId: createOrder
+      summary: Create a purchase order
+      description: Submit a new purchase order document.
+      tags: [orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Order"
+      responses:
+        "201":
+          description: Order created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Order"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /v1/orders/{id}:
+    get:
+      operationId: getOrder
+      summary: Get a single purchase order
+      description: Returns one purchase order document by its unique identifier.
+      tags: [orders]
+      parameters:
+        - $ref: "#/components/parameters/idParam"
+      responses:
+        "200":
+          description: Order found.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Order"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ---------------------------------------------------------------------------
+  # Catalogs
+  # ---------------------------------------------------------------------------
+
+  /v1/catalogs:
+    get:
+      operationId: listCatalogs
+      summary: List catalogs
+      description: Returns a paginated list of all catalog documents visible to the authenticated trading partner.
+      tags: [catalogs]
+      parameters:
+        - $ref: "#/components/parameters/limitParam"
+        - $ref: "#/components/parameters/offsetParam"
+      responses:
+        "200":
+          description: Successful response — array of catalog documents.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Catalog"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    post:
+      operationId: createCatalog
+      summary: Create a catalog
+      description: Submit a new product catalog document.
+      tags: [catalogs]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Catalog"
+      responses:
+        "201":
+          description: Catalog created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Catalog"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /v1/catalogs/{id}:
+    get:
+      operationId: getCatalog
+      summary: Get a single catalog
+      description: Returns one catalog document by its unique identifier.
+      tags: [catalogs]
+      parameters:
+        - $ref: "#/components/parameters/idParam"
+      responses:
+        "200":
+          description: Catalog found.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Catalog"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ---------------------------------------------------------------------------
+  # Shipments
+  # ---------------------------------------------------------------------------
+
+  /v1/shipments:
+    get:
+      operationId: listShipments
+      summary: List shipments
+      description: Returns a paginated list of all advance ship notice documents visible to the authenticated trading partner.
+      tags: [shipments]
+      parameters:
+        - $ref: "#/components/parameters/limitParam"
+        - $ref: "#/components/parameters/offsetParam"
+      responses:
+        "200":
+          description: Successful response — array of shipment documents.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Shipment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    post:
+      operationId: createShipment
+      summary: Create a shipment notice
+      description: Submit a new advance ship notice document.
+      tags: [shipments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Shipment"
+      responses:
+        "201":
+          description: Shipment notice created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Shipment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /v1/shipments/{id}:
+    get:
+      operationId: getShipment
+      summary: Get a single shipment notice
+      description: Returns one advance ship notice document by its unique identifier.
+      tags: [shipments]
+      parameters:
+        - $ref: "#/components/parameters/idParam"
+      responses:
+        "200":
+          description: Shipment found.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Shipment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ---------------------------------------------------------------------------
+  # Acknowledgments
+  # ---------------------------------------------------------------------------
+
+  /v1/acknowledgments:
+    get:
+      operationId: listAcknowledgments
+      summary: List acknowledgments
+      description: Returns a paginated list of all functional acknowledgment documents visible to the authenticated trading partner.
+      tags: [acknowledgments]
+      parameters:
+        - $ref: "#/components/parameters/limitParam"
+        - $ref: "#/components/parameters/offsetParam"
+      responses:
+        "200":
+          description: Successful response — array of acknowledgment documents.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Acknowledgment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    post:
+      operationId: createAcknowledgment
+      summary: Create an acknowledgment
+      description: Submit a functional acknowledgment for a previously received OCEX document.
+      tags: [acknowledgments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Acknowledgment"
+      responses:
+        "201":
+          description: Acknowledgment created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Acknowledgment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /v1/acknowledgments/{id}:
+    get:
+      operationId: getAcknowledgment
+      summary: Get a single acknowledgment
+      description: Returns one functional acknowledgment document by its unique identifier.
+      tags: [acknowledgments]
+      parameters:
+        - $ref: "#/components/parameters/idParam"
+      responses:
+        "200":
+          description: Acknowledgment found.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Acknowledgment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ---------------------------------------------------------------------------
+  # EDI Parse endpoint
+  # ---------------------------------------------------------------------------
+
+  /v1/parse:
+    post:
+      operationId: parseEdi
+      summary: Parse raw EDI X12 into OCEX JSON
+      description: |
+        Accepts a raw EDI X12 string and returns the equivalent OCEX document(s).
+        Useful for one-off conversions and debugging without running the full CLI.
+        Supported transaction sets: 810, 832, 850, 856, 997.
+      tags: [parse]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [edi]
+              properties:
+                edi:
+                  type: string
+                  description: "Raw EDI X12 string including ISA envelope. Segment terminators and element delimiters are auto-detected."
+                  example: "ISA*00*          *00*          *ZZ*SENDER         *ZZ*RECEIVER       *230101*1200*^*00501*000000001*0*P*:~GS*IN*SENDER*RECEIVER*20230101*1200*1*X*005010X222A1~..."
+      responses:
+        "200":
+          description: EDI parsed successfully — returns one or more OCEX documents.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/OcexDocument"
+                    description: "Parsed OCEX documents. A single EDI interchange may contain multiple functional groups and transaction sets."
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          description: EDI was syntactically valid but could not be mapped to an OCEX document type.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+# =============================================================================
+# Components
+# =============================================================================
+
+components:
+
+  # ---------------------------------------------------------------------------
+  # Security schemes
+  # ---------------------------------------------------------------------------
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        API key issued per trading-partner relationship. Include it in every
+        request as the `X-API-Key` header value.
+
+  # ---------------------------------------------------------------------------
+  # Reusable parameters
+  # ---------------------------------------------------------------------------
+
+  parameters:
+    idParam:
+      name: id
+      in: path
+      required: true
+      description: Unique document identifier.
+      schema:
+        type: string
+
+    limitParam:
+      name: limit
+      in: query
+      required: false
+      description: Maximum number of documents to return (default 50, max 500).
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 500
+        default: 50
+
+    offsetParam:
+      name: offset
+      in: query
+      required: false
+      description: Number of documents to skip before returning results.
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+
+  # ---------------------------------------------------------------------------
+  # Reusable responses
+  # ---------------------------------------------------------------------------
+
+  responses:
+    BadRequest:
+      description: The request body or parameters failed schema validation.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+          example:
+            error:
+              code: "VALIDATION_ERROR"
+              message: "Field 'currency' is required for invoices."
+              location: "body.currency"
+              suggestion: "Add a three-letter ISO 4217 currency code, e.g. \"USD\"."
+
+    Unauthorized:
+      description: Missing or invalid API key.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+          example:
+            error:
+              code: "UNAUTHORIZED"
+              message: "A valid X-API-Key header is required."
+
+    NotFound:
+      description: No document with the requested ID exists.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+          example:
+            error:
+              code: "NOT_FOUND"
+              message: "Document 'inv-001' not found."
+
+    InternalServerError:
+      description: An unexpected error occurred in the gateway.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+          example:
+            error:
+              code: "INTERNAL_ERROR"
+              message: "An unexpected error occurred. Please try again or contact support."
+
+  # ---------------------------------------------------------------------------
+  # Schemas
+  # ---------------------------------------------------------------------------
+
+  schemas:
+
+    # -- Error envelope -------------------------------------------------------
+
+    ErrorDetail:
+      type: object
+      required: [code, message]
+      description: Structured error detail object.
+      properties:
+        code:
+          type: string
+          description: "Machine-readable error code (e.g. VALIDATION_ERROR, NOT_FOUND, UNAUTHORIZED)."
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          description: "Human-readable description of the error."
+          example: "Field 'currency' is required for invoices."
+        location:
+          type: string
+          description: "JSON Pointer or dot-notation path to the field that caused the error."
+          example: "body.currency"
+        suggestion:
+          type: string
+          description: "Optional actionable hint to help the caller fix the problem."
+          example: "Add a three-letter ISO 4217 currency code, e.g. \"USD\"."
+
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      description: Top-level error response wrapper used by all error status codes.
+      properties:
+        error:
+          $ref: "#/components/schemas/ErrorDetail"
+
+    # -- Shared sub-schemas ---------------------------------------------------
+
+    OcexParty:
+      type: object
+      required: [id, name]
+      description: Identifies a trading partner (sender or receiver).
+      properties:
+        id:
+          type: string
+          description: "Party identifier (e.g. DUNS, GLN, or internal ID)."
+          example: "1234567890"
+        name:
+          type: string
+          description: "Human-readable party name."
+          example: "Acme Corp"
+        qualifier:
+          type: string
+          description: "EDI qualifier indicating the ID type (e.g. \"01\" for DUNS)."
+          example: "01"
+
+    OcexAddress:
+      type: object
+      required: [street, city, state, zip, country]
+      description: A physical mailing or shipping address.
+      properties:
+        street:
+          type: string
+          description: "Primary street address line."
+          example: "123 Commerce Blvd"
+        street2:
+          type: string
+          description: "Optional secondary address line (suite, floor, etc.)."
+          example: "Suite 400"
+        city:
+          type: string
+          description: "City name."
+          example: "Chicago"
+        state:
+          type: string
+          description: "State, province, or region code."
+          example: "IL"
+        zip:
+          type: string
+          description: "Postal / ZIP code."
+          example: "60601"
+        country:
+          type: string
+          description: "ISO 3166-1 alpha-2 country code."
+          example: "US"
+
+    OcexLineItem:
+      type: object
+      required: [lineNumber, sku, description, quantity, unitOfMeasure, unitPrice, totalPrice]
+      description: A single product or service line within an OCEX document.
+      properties:
+        lineNumber:
+          type: integer
+          minimum: 1
+          description: "Sequential line number within the document."
+          example: 1
+        sku:
+          type: string
+          description: "Vendor stock-keeping unit identifier."
+          example: "SKU-98765"
+        description:
+          type: string
+          description: "Human-readable product or service description."
+          example: "Widget Type A — Blue"
+        quantity:
+          type: number
+          minimum: 0
+          description: "Quantity of the item."
+          example: 100
+        unitOfMeasure:
+          type: string
+          description: "Unit of measure code (e.g. EA, CS, LB)."
+          example: "EA"
+        unitPrice:
+          type: number
+          minimum: 0
+          description: "Price per single unit."
+          example: 4.99
+        totalPrice:
+          type: number
+          minimum: 0
+          description: "Total price for this line (quantity * unitPrice)."
+          example: 499.00
+        upc:
+          type: string
+          description: "Optional Universal Product Code."
+          example: "012345678905"
+        buyerPartNumber:
+          type: string
+          description: "Buyer's internal part number for cross-reference."
+          example: "BP-001"
+        vendorPartNumber:
+          type: string
+          description: "Vendor's internal part number for cross-reference."
+          example: "VP-001"
+
+    # -- Document schemas (inline, referencing JSON Schema files) -------------
+
+    Invoice:
+      $ref: "./schemas/invoice.json"
+
+    Order:
+      $ref: "./schemas/order.json"
+
+    Catalog:
+      $ref: "./schemas/catalog.json"
+
+    Shipment:
+      $ref: "./schemas/shipment.json"
+
+    Acknowledgment:
+      $ref: "./schemas/acknowledgment.json"
+
+    OcexDocument:
+      description: "Union of all OCEX document types. Discriminated by the `type` field."
+      oneOf:
+        - $ref: "./schemas/invoice.json"
+        - $ref: "./schemas/order.json"
+        - $ref: "./schemas/catalog.json"
+        - $ref: "./schemas/shipment.json"
+        - $ref: "./schemas/acknowledgment.json"
+      discriminator:
+        propertyName: type
+        mapping:
+          invoice: "./schemas/invoice.json"
+          order: "./schemas/order.json"
+          catalog: "./schemas/catalog.json"
+          shipment: "./schemas/shipment.json"
+          acknowledgment: "./schemas/acknowledgment.json"

@@ -1,0 +1,215 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ocex.io/schemas/invoice.json",
+  "title": "OcexInvoice",
+  "description": "An OCEX invoice document, equivalent to EDI 810. Represents a request for payment from a vendor to a buyer for goods or services delivered.",
+  "type": "object",
+  "required": [
+    "id",
+    "version",
+    "type",
+    "sender",
+    "receiver",
+    "documentDate",
+    "invoiceNumber",
+    "currency",
+    "lineItems",
+    "total"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this document."
+    },
+    "version": {
+      "type": "string",
+      "description": "OCEX protocol version string (e.g. \"1.0\")."
+    },
+    "type": {
+      "type": "string",
+      "const": "invoice",
+      "description": "Discriminator field identifying this as an invoice document."
+    },
+    "sender": {
+      "$ref": "#/$defs/OcexParty",
+      "description": "The party sending this invoice (typically the vendor)."
+    },
+    "receiver": {
+      "$ref": "#/$defs/OcexParty",
+      "description": "The party receiving this invoice (typically the buyer)."
+    },
+    "documentDate": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO 8601 date on which the invoice was issued (YYYY-MM-DD)."
+    },
+    "invoiceNumber": {
+      "type": "string",
+      "description": "Vendor-assigned invoice number, unique within the sender's system."
+    },
+    "purchaseOrderRef": {
+      "type": "string",
+      "description": "Optional reference to the buyer's purchase order number."
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "ISO 4217 three-letter currency code (e.g. \"USD\")."
+    },
+    "lineItems": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/OcexLineItem" },
+      "minItems": 1,
+      "description": "One or more invoiced line items."
+    },
+    "subtotal": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Pre-tax subtotal amount."
+    },
+    "tax": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Total tax amount applied to this invoice."
+    },
+    "total": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Grand total amount due, inclusive of all taxes and fees."
+    },
+    "shipTo": {
+      "$ref": "#/$defs/OcexAddress",
+      "description": "Optional ship-to address for the invoiced goods."
+    },
+    "billTo": {
+      "$ref": "#/$defs/OcexAddress",
+      "description": "Optional bill-to address for the invoice recipient."
+    },
+    "dueDate": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO 8601 date by which payment is due (YYYY-MM-DD)."
+    },
+    "terms": {
+      "type": "string",
+      "description": "Human-readable payment terms (e.g. \"Net 30\")."
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Arbitrary key-value metadata for extension or passthrough data."
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "OcexParty": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Party identifier (e.g. DUNS, GLN, or internal ID)."
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable party name."
+        },
+        "qualifier": {
+          "type": "string",
+          "description": "EDI qualifier indicating the ID type (e.g. \"01\" for DUNS)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "OcexAddress": {
+      "type": "object",
+      "required": ["street", "city", "state", "zip", "country"],
+      "properties": {
+        "street": {
+          "type": "string",
+          "description": "Primary street address line."
+        },
+        "street2": {
+          "type": "string",
+          "description": "Optional secondary address line (suite, floor, etc.)."
+        },
+        "city": {
+          "type": "string",
+          "description": "City name."
+        },
+        "state": {
+          "type": "string",
+          "description": "State, province, or region code."
+        },
+        "zip": {
+          "type": "string",
+          "description": "Postal / ZIP code."
+        },
+        "country": {
+          "type": "string",
+          "description": "ISO 3166-1 alpha-2 country code (e.g. \"US\")."
+        }
+      },
+      "additionalProperties": false
+    },
+    "OcexLineItem": {
+      "type": "object",
+      "required": [
+        "lineNumber",
+        "sku",
+        "description",
+        "quantity",
+        "unitOfMeasure",
+        "unitPrice",
+        "totalPrice"
+      ],
+      "properties": {
+        "lineNumber": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Sequential line number within the document."
+        },
+        "sku": {
+          "type": "string",
+          "description": "Vendor stock-keeping unit identifier."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable product or service description."
+        },
+        "quantity": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Quantity of the item."
+        },
+        "unitOfMeasure": {
+          "type": "string",
+          "description": "Unit of measure code (e.g. \"EA\" for each, \"CS\" for case)."
+        },
+        "unitPrice": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Price per single unit."
+        },
+        "totalPrice": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total price for this line (quantity * unitPrice)."
+        },
+        "upc": {
+          "type": "string",
+          "description": "Optional Universal Product Code."
+        },
+        "buyerPartNumber": {
+          "type": "string",
+          "description": "Buyer's internal part number for this item."
+        },
+        "vendorPartNumber": {
+          "type": "string",
+          "description": "Vendor's internal part number for this item."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
