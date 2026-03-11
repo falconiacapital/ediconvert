@@ -1,6 +1,10 @@
 import type { Express } from 'express';
 import type { Storage } from './storage.js';
 
+function esc(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 export function addDashboardRoutes(app: Express, storage: Storage): void {
   app.get('/', (req, res) => {
     const invoiceCount = storage.countDocuments({ type: 'invoice' });
@@ -35,7 +39,7 @@ export function addDashboardRoutes(app: Express, storage: Storage): void {
   <h2>Recent Transactions</h2>
   <table>
     <tr><th>ID</th><th>Type</th><th>Partner</th><th>Date</th></tr>
-    ${recentDocs.map(d => `<tr><td>${d.id}</td><td>${d.type}</td><td>${d.partnerId}</td><td>${d.createdAt || '-'}</td></tr>`).join('')}
+    ${recentDocs.map(d => `<tr><td>${esc(d.id)}</td><td>${esc(d.type)}</td><td>${esc(d.partnerId)}</td><td>${esc(d.createdAt || '-')}</td></tr>`).join('')}
   </table>
 </body>
 </html>`);

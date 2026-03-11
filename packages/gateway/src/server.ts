@@ -1,7 +1,7 @@
 import express from 'express';
 import { randomUUID } from 'node:crypto';
 import type { Storage } from './storage.js';
-import { translateToOcex } from '@ediconvert/core';
+import { translateToOcex, EDIConvertError } from '@ediconvert/core';
 import { WebhookManager } from './webhooks.js';
 import type { AuthManager } from './auth.js';
 import { addDashboardRoutes } from './dashboard.js';
@@ -30,8 +30,17 @@ export function createApp(config: AppConfig): express.Express {
     try {
       const doc = translateToOcex(req.body.edi);
       res.json({ data: [doc] });
-    } catch (err: any) {
-      res.status(400).json(err.toJSON ? err.toJSON() : { error: { message: err.message } });
+    } catch (err: unknown) {
+      if (err instanceof EDIConvertError) {
+        res.status(400).json(err.toJSON());
+      } else {
+        res.status(400).json({
+          error: {
+            code: 'PARSE_FAILED',
+            message: 'Failed to parse EDI document',
+          },
+        });
+      }
     }
   });
 

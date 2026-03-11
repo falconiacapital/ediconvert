@@ -147,8 +147,7 @@ function buildCatalogSegments(doc: OcexCatalog): X12Segment[] {
   // DTM: effective date, qualifier '007' = effective
   segments.push(seg('DTM', '007', dateToX12(doc.effectiveDate)));
 
-  // Support both doc.items (typed) and doc.lineItems (produced by forward translator)
-  const items: OcexCatalog['items'] = doc.items ?? (doc as unknown as { lineItems: OcexCatalog['items'] }).lineItems ?? [];
+  const items: OcexCatalog['items'] = doc.items ?? [];
   for (const item of items) {
     // LIN: line item identification; qualifier 'VP' = vendor product number
     segments.push(seg('LIN', '', 'VP', item.sku));

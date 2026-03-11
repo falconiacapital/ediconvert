@@ -60,6 +60,8 @@ export class Storage {
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
 
+      CREATE INDEX IF NOT EXISTS idx_api_keys_prefix ON api_keys(prefix);
+
       CREATE TABLE IF NOT EXISTS webhooks (
         id TEXT PRIMARY KEY,
         url TEXT NOT NULL,
@@ -191,19 +193,18 @@ export class Storage {
     }));
   }
 
-  getApiKeyByPrefix(prefix: string): ApiKeyRecord | undefined {
+  getApiKeysByPrefix(prefix: string): ApiKeyRecord[] {
     const stmt = this.db.prepare(`
       SELECT key_hash, prefix, label, partner_scope, created_at FROM api_keys WHERE prefix = ?
     `);
-    const row = stmt.get(prefix) as { key_hash: string; prefix: string; label: string; partner_scope: string | null; created_at: string } | undefined;
-    if (!row) return undefined;
-    return {
+    const rows = stmt.all(prefix) as { key_hash: string; prefix: string; label: string; partner_scope: string | null; created_at: string }[];
+    return rows.map(row => ({
       keyHash: row.key_hash,
       prefix: row.prefix,
       label: row.label,
       partnerScope: row.partner_scope ?? undefined,
       createdAt: row.created_at,
-    };
+    }));
   }
 
   saveWebhook(webhook: WebhookRecord): void {

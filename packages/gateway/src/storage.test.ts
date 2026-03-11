@@ -47,16 +47,16 @@ describe('Storage', () => {
   });
 
   it('stores and retrieves api key by prefix', () => {
-    storage.saveApiKey({ keyHash: 'hash1', prefix: 'edi_live', label: 'test', partnerScope: undefined });
-    const key = storage.getApiKeyByPrefix('edi_live');
-    expect(key).toBeDefined();
-    expect(key!.label).toBe('test');
-    expect(key!.keyHash).toBe('hash1');
+    storage.saveApiKey({ keyHash: 'hash1', prefix: 'abcd1234', label: 'test', partnerScope: undefined });
+    const keys = storage.getApiKeysByPrefix('abcd1234');
+    expect(keys).toHaveLength(1);
+    expect(keys[0].label).toBe('test');
+    expect(keys[0].keyHash).toBe('hash1');
   });
 
-  it('getApiKeyByPrefix returns undefined for unknown prefix', () => {
-    const key = storage.getApiKeyByPrefix('unknown_');
-    expect(key).toBeUndefined();
+  it('getApiKeysByPrefix returns empty array for unknown prefix', () => {
+    const keys = storage.getApiKeysByPrefix('unknown_');
+    expect(keys).toHaveLength(0);
   });
 
   it('stores and retrieves webhook with secret', () => {

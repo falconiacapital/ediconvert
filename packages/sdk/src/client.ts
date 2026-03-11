@@ -1,5 +1,5 @@
 import { translateToOcex, translateToX12, GatewayError } from '@ediconvert/core';
-import type { OcexDocument } from '@ediconvert/core';
+import type { OcexDocument, OcexCatalog, OcexShipment, OcexAcknowledgment } from '@ediconvert/core';
 import { HttpClient } from './http.js';
 
 export interface EDIConvertConfig {
@@ -46,6 +46,42 @@ export class EDIConvert {
       list: async (params: Record<string, unknown>) => {
         if (!http) { requireGateway(config); return []; }
         const result = await http.get<{ data: any[] }>('/v1/orders', params as Record<string, string>);
+        return result.data;
+      },
+    };
+  }
+
+  get catalogs() {
+    const config = this.config;
+    const http = this.http;
+    return {
+      list: async (filter?: Record<string, string>) => {
+        if (!http) { requireGateway(config); return []; }
+        const result = await http.get<{ data: OcexCatalog[] }>('/v1/catalogs', filter);
+        return result.data;
+      },
+    };
+  }
+
+  get shipments() {
+    const config = this.config;
+    const http = this.http;
+    return {
+      list: async (filter?: Record<string, string>) => {
+        if (!http) { requireGateway(config); return []; }
+        const result = await http.get<{ data: OcexShipment[] }>('/v1/shipments', filter);
+        return result.data;
+      },
+    };
+  }
+
+  get acknowledgments() {
+    const config = this.config;
+    const http = this.http;
+    return {
+      list: async (filter?: Record<string, string>) => {
+        if (!http) { requireGateway(config); return []; }
+        const result = await http.get<{ data: OcexAcknowledgment[] }>('/v1/acknowledgments', filter);
         return result.data;
       },
     };

@@ -176,7 +176,11 @@ export function translateToOcex(raw: string): OcexDocument {
         (item as Record<string, unknown>).totalPrice = item.quantity * item.unitPrice;
       }
     }
-    result.lineItems = lineItems;
+    if (result.type === 'catalog') {
+      (result as any).items = lineItems;
+    } else {
+      result.lineItems = lineItems;
+    }
   }
 
   // Invoice-specific defaults

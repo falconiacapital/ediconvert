@@ -7,6 +7,8 @@ import http from 'node:http';
 
 // 1. Set up gateway
 const storage = new Storage(':memory:');
+// Auth disabled for demo. In production, set requireAuth: true
+// and create API keys with: ediconvert keys create --db=./edi.db
 const app = createApp({ storage, requireAuth: false });
 const server = http.createServer(app);
 
