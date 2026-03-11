@@ -63,25 +63,7 @@
   },
   "additionalProperties": false,
   "$defs": {
-    "OcexParty": {
-      "type": "object",
-      "required": ["id", "name"],
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Party identifier (e.g. DUNS, GLN, or internal ID)."
-        },
-        "name": {
-          "type": "string",
-          "description": "Human-readable party name."
-        },
-        "qualifier": {
-          "type": "string",
-          "description": "EDI qualifier indicating the ID type (e.g. \"01\" for DUNS)."
-        }
-      },
-      "additionalProperties": false
-    },
+    "OcexParty": { "$ref": "common.json#/$defs/OcexParty" },
     "AcknowledgmentError": {
       "type": "object",
       "required": ["code", "message"],

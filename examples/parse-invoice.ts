@@ -5,14 +5,18 @@ const edi = new EDIConvert();
 
 // Parse an EDI 810 invoice
 const raw = readFileSync('./tests/fixtures/810-basic.edi', 'utf-8');
-const invoice = await edi.parse(raw);
+const doc = await edi.parse(raw);
 
 console.log('Parsed Invoice:');
-console.log(`  Number: ${(invoice as any).invoiceNumber}`);
-console.log(`  Total: $${(invoice as any).total}`);
-console.log(`  From: ${invoice.sender.name}`);
-console.log(`  To: ${invoice.receiver.name}`);
-console.log(`  Line Items: ${(invoice as any).lineItems.length}`);
+if (doc.type === 'invoice') {
+  console.log(`  Number: ${doc.invoiceNumber}`);
+  console.log(`  Total: $${doc.total}`);
+  console.log(`  From: ${doc.sender.name}`);
+  console.log(`  To: ${doc.receiver.name}`);
+  console.log(`  Line Items: ${doc.lineItems.length}`);
+} else {
+  console.log(`  (document type: ${doc.type})`);
+}
 console.log();
 console.log('Full OCEX JSON:');
-console.log(JSON.stringify(invoice, null, 2));
+console.log(JSON.stringify(doc, null, 2));

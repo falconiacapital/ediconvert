@@ -13,7 +13,8 @@
     "dev": "tsup src/index.ts --format cjs --dts --watch"
   },
   "dependencies": {
-    "@ediconvert/core": "*"
+    "@ediconvert/core": "*",
+    "@ediconvert/gateway": "*"
   },
   "license": "MIT"
 }

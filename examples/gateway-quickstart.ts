@@ -20,7 +20,7 @@ server.listen(3000, async () => {
     id: 'inv-demo-001',
     type: doc.type,
     partnerId: doc.sender.id,
-    data: doc as any,
+    data: doc as Record<string, unknown>,
     rawEdi: raw,
   });
   console.log('Ingested invoice into gateway');

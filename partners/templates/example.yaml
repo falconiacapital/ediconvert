@@ -1,0 +1,16 @@
+name: Example Trading Partner
+id: example-partner
+delimiters:
+  element: "*"
+  segment: "~"
+  component: ":"
+transactions:
+  - "810"
+  - "850"
+endpoints:
+  sftp:
+    host: sftp.example.com
+    port: 22
+    username: edi_user
+    inbox: /inbound
+    outbox: /outbound
