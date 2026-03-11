@@ -1,6 +1,7 @@
 import express from 'express';
 import type { Storage } from './storage.js';
 import { translateToOcex } from '@ediconvert/core';
+import { WebhookManager } from './webhooks.js';
 
 interface AppConfig {
   storage: Storage;
@@ -10,6 +11,8 @@ interface AppConfig {
 export function createApp(config: AppConfig): express.Express {
   const app = express();
   app.use(express.json({ limit: '10mb' }));
+
+  const webhookManager = new WebhookManager(config.storage);
 
   app.post('/v1/parse', (req, res) => {
     try {
@@ -45,6 +48,21 @@ export function createApp(config: AppConfig): express.Express {
   resourceRoutes('catalog', '/v1/catalogs');
   resourceRoutes('shipment', '/v1/shipments');
   resourceRoutes('acknowledgment', '/v1/acknowledgments');
+
+  app.post('/v1/webhooks', (req, res) => {
+    const { url, events } = req.body as { url?: string; events?: string[] };
+    if (!url || !Array.isArray(events) || events.length === 0) {
+      res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'url and events are required' } });
+      return;
+    }
+    webhookManager.register({ url, events });
+    res.status(201).json({ data: { url, events } });
+  });
+
+  app.get('/v1/webhooks', (_req, res) => {
+    const hooks = config.storage.listWebhooks();
+    res.json({ data: hooks });
+  });
 
   return app;
 }
