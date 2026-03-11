@@ -1,0 +1,27 @@
+transactionSet: "832"
+ocexType: "catalog"
+fields:
+  - segment: BCT
+    element: 1
+    field: catalogId
+  - segment: DTM
+    element: 1
+    field: effectiveDate
+    transform: date
+lineItems:
+  loopSegment: LIN
+  fields:
+    - segment: LIN
+      element: 2
+      field: sku
+    - segment: PID
+      element: 4
+      field: description
+    - segment: CTP
+      element: 2
+      field: unitPrice
+      transform: number
+    - segment: CTP
+      element: 3
+      field: quantity
+      transform: number

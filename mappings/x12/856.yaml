@@ -1,0 +1,38 @@
+transactionSet: "856"
+ocexType: "shipment"
+fields:
+  - segment: BSN
+    element: 1
+    field: shipmentId
+  - segment: BSN
+    element: 2
+    field: documentDate
+    transform: date
+  - segment: TD5
+    element: 2
+    field: carrier
+  - segment: REF
+    element: 1
+    field: trackingNumber
+    qualifier: "CN"
+  - segment: N1
+    element: 1
+    field: shipFrom.name
+    qualifier: "SF"
+  - segment: N1
+    element: 1
+    field: shipTo.name
+    qualifier: "ST"
+lineItems:
+  loopSegment: SN1
+  fields:
+    - segment: SN1
+      element: 1
+      field: quantity
+      transform: number
+    - segment: SN1
+      element: 2
+      field: unitOfMeasure
+    - segment: LIN
+      element: 2
+      field: sku

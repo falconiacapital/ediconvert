@@ -1,0 +1,10 @@
+transactionSet: "997"
+ocexType: "acknowledgment"
+fields:
+  - segment: AK1
+    element: 1
+    field: referencedDocumentId
+  - segment: AK9
+    element: 0
+    field: accepted
+    transform: acceptCode

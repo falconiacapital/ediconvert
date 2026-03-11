@@ -1,6 +1,5 @@
-import { resolve } from 'node:path';
 import { tokenize } from './x12/tokenizer.js';
-import { loadMapping, MAPPINGS_DIR } from './mapping/loader.js';
+import { getMappingForTransactionSet } from './mapping/registry.js';
 import { ParseError } from './errors.js';
 import type { X12Segment } from './x12/types.js';
 import type { FieldMapping } from './mapping/types.js';
@@ -52,6 +51,8 @@ function applyTransform(
         return `${trimmed.slice(0, 4)}-${trimmed.slice(4, 6)}-${trimmed.slice(6, 8)}`;
       }
       return trimmed;
+    case 'acceptCode':
+      return trimmed === 'A';
     default:
       return trimmed;
   }
@@ -151,17 +152,7 @@ export function translateToOcex(raw: string): OcexDocument {
     throw new ParseError('MISSING_ST', 'Could not determine transaction set code from ST segment');
   }
 
-  const mappingPath = resolve(MAPPINGS_DIR, `${transactionSetCode}.yaml`);
-  let mapping;
-  try {
-    mapping = loadMapping(mappingPath);
-  } catch {
-    throw new ParseError(
-      'UNKNOWN_TRANSACTION',
-      `No mapping found for transaction set ${transactionSetCode}`,
-      { suggestion: `Add a mapping file at mappings/x12/${transactionSetCode}.yaml` },
-    );
-  }
+  const mapping = getMappingForTransactionSet(transactionSetCode);
 
   const result: Record<string, unknown> = {
     type: mapping.ocexType,

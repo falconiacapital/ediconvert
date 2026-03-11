@@ -1,0 +1,65 @@
+transactionSet: "850"
+ocexType: "order"
+fields:
+  - segment: BEG
+    element: 2
+    field: orderNumber
+  - segment: BEG
+    element: 4
+    field: documentDate
+    transform: date
+  - segment: N1
+    element: 1
+    field: sender.name
+    qualifier: "BY"
+  - segment: N1
+    element: 3
+    field: sender.id
+    qualifier: "BY"
+  - segment: N1
+    element: 1
+    field: receiver.name
+    qualifier: "SE"
+  - segment: N1
+    element: 3
+    field: receiver.id
+    qualifier: "SE"
+  - segment: N3
+    element: 0
+    field: shipTo.street
+  - segment: N4
+    element: 0
+    field: shipTo.city
+  - segment: N4
+    element: 1
+    field: shipTo.state
+  - segment: N4
+    element: 2
+    field: shipTo.zip
+  - segment: N4
+    element: 3
+    field: shipTo.country
+lineItems:
+  loopSegment: PO1
+  fields:
+    - segment: PO1
+      element: 0
+      field: lineNumber
+      transform: number
+    - segment: PO1
+      element: 1
+      field: quantity
+      transform: number
+    - segment: PO1
+      element: 2
+      field: unitOfMeasure
+    - segment: PO1
+      element: 3
+      field: unitPrice
+      transform: number
+    - segment: PO1
+      element: 6
+      field: sku
+    - segment: PID
+      element: 4
+      field: description
