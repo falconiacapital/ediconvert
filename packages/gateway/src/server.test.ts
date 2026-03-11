@@ -16,7 +16,8 @@ describe('Gateway API', () => {
   it('POST /v1/parse returns OCEX JSON from raw EDI', async () => {
     const edi = 'ISA*00*          *00*          *ZZ*SENDER         *ZZ*RECEIVER       *210901*1234*^*00501*000000001*0*P*:~GS*FA*SENDER*RECEIVER*20210901*1234*1*X*005010~ST*997*0001~AK1*PO*1~AK9*A*1*1*1~SE*4*0001~GE*1*1~IEA*1*000000001~';
     const res = await request(app).post('/v1/parse').send({ edi }).expect(200);
-    expect(res.body.type).toBe('acknowledgment');
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.data[0].type).toBe('acknowledgment');
   });
 
   it('GET /v1/invoices returns stored invoices', async () => {
@@ -32,5 +33,23 @@ describe('Gateway API', () => {
 
   it('returns 404 for unknown document', async () => {
     await request(app).get('/v1/invoices/nope').expect(404);
+  });
+
+  it('POST /v1/invoices saves a document and returns 201', async () => {
+    const body = { type: 'invoice', id: 'inv-post-1', sender: { id: 'PARTNER1', name: 'Partner One' } };
+    const res = await request(app).post('/v1/invoices').send(body).expect(201);
+    expect(res.body.data.id).toBe('inv-post-1');
+    expect(res.body.data.type).toBe('invoice');
+  });
+
+  it('POST /v1/invoices rejects wrong type', async () => {
+    const body = { type: 'order' };
+    await request(app).post('/v1/invoices').send(body).expect(400);
+  });
+
+  it('POST /v1/orders saves an order and returns 201', async () => {
+    const body = { type: 'order', id: 'ord-post-1', sender: { id: 'PARTNER2', name: 'Partner Two' } };
+    const res = await request(app).post('/v1/orders').send(body).expect(201);
+    expect(res.body.data.id).toBe('ord-post-1');
   });
 });

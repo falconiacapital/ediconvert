@@ -2,7 +2,8 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "paths": {
-      "@ediconvert/core": ["./packages/core/src/index.ts"]
+      "@ediconvert/core": ["./packages/core/src/index.ts"],
+      "@ediconvert/gateway": ["./packages/gateway/src/lib.ts"]
     }
   }
 }

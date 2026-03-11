@@ -1,4 +1,5 @@
 import express from 'express';
+import { randomUUID } from 'node:crypto';
 import type { Storage } from './storage.js';
 import { translateToOcex } from '@ediconvert/core';
 import { WebhookManager } from './webhooks.js';
@@ -28,7 +29,7 @@ export function createApp(config: AppConfig): express.Express {
   app.post('/v1/parse', (req, res) => {
     try {
       const doc = translateToOcex(req.body.edi);
-      res.json(doc);
+      res.json({ data: [doc] });
     } catch (err: any) {
       res.status(400).json(err.toJSON ? err.toJSON() : { error: { message: err.message } });
     }
@@ -36,10 +37,13 @@ export function createApp(config: AppConfig): express.Express {
 
   function resourceRoutes(typeName: string, path: string) {
     app.get(path, (req, res) => {
+      const limitParam = req.query.limit;
+      const limit = limitParam !== undefined ? Number(limitParam) : undefined;
       const docs = config.storage.listDocuments({
         type: typeName,
         partnerId: req.query.partner as string,
         since: req.query.since as string,
+        limit,
       });
       res.json({ data: docs });
     });
@@ -52,6 +56,35 @@ export function createApp(config: AppConfig): express.Express {
       }
       res.json({ data: doc });
     });
+
+    app.post(path, async (req, res) => {
+      const body = req.body as Record<string, unknown>;
+      if (!body || body.type !== typeName) {
+        res.status(400).json({ error: { code: 'INVALID_INPUT', message: `type must be "${typeName}"` } });
+        return;
+      }
+
+      const id = (body.id as string | undefined) ?? `${typeName}-${randomUUID()}`;
+      const partnerId = (body.sender as { id?: string } | undefined)?.id ?? 'unknown';
+
+      const record = {
+        id,
+        type: typeName,
+        partnerId,
+        data: body,
+        rawEdi: '',
+      };
+
+      config.storage.saveDocument(record);
+
+      try {
+        await webhookManager.deliver(`${typeName}.received`, body);
+      } catch {
+        // Webhook failures should not prevent the response
+      }
+
+      res.status(201).json({ data: record });
+    });
   }
 
   resourceRoutes('invoice', '/v1/invoices');
@@ -61,12 +94,12 @@ export function createApp(config: AppConfig): express.Express {
   resourceRoutes('acknowledgment', '/v1/acknowledgments');
 
   app.post('/v1/webhooks', (req, res) => {
-    const { url, events } = req.body as { url?: string; events?: string[] };
+    const { url, events, secret } = req.body as { url?: string; events?: string[]; secret?: string };
     if (!url || !Array.isArray(events) || events.length === 0) {
       res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'url and events are required' } });
       return;
     }
-    webhookManager.register({ url, events });
+    webhookManager.register({ url, events, secret });
     res.status(201).json({ data: { url, events } });
   });
 

@@ -3,22 +3,25 @@ import bcrypt from 'bcrypt';
 import type { Storage } from './storage.js';
 import type { Request, Response, NextFunction } from 'express';
 
+/** Length of the unhashed prefix stored alongside the key hash. */
+const PREFIX_LENGTH = 8;
+
 export class AuthManager {
   constructor(private storage: Storage) {}
 
   async createKey(opts: { label: string; partnerScope?: string }): Promise<{ rawKey: string; label: string }> {
     const raw = 'edi_live_' + randomBytes(24).toString('hex');
+    const prefix = raw.slice(0, PREFIX_LENGTH);
     const hash = await bcrypt.hash(raw, 10);
-    this.storage.saveApiKey({ keyHash: hash, label: opts.label, partnerScope: opts.partnerScope });
+    this.storage.saveApiKey({ keyHash: hash, prefix, label: opts.label, partnerScope: opts.partnerScope });
     return { rawKey: raw, label: opts.label };
   }
 
   async validateKey(rawKey: string): Promise<boolean> {
-    const keys = this.storage.listApiKeys();
-    for (const k of keys) {
-      if (await bcrypt.compare(rawKey, k.keyHash)) return true;
-    }
-    return false;
+    const prefix = rawKey.slice(0, PREFIX_LENGTH);
+    const record = this.storage.getApiKeyByPrefix(prefix);
+    if (!record) return false;
+    return bcrypt.compare(rawKey, record.keyHash);
   }
 
   middleware() {

@@ -3,7 +3,7 @@ import { Storage } from './storage.js';
 import { AuthManager } from './auth.js';
 import { WebhookManager } from './webhooks.js';
 import { EDIWatcher, LocalTransport } from './sftp.js';
-import { translateToOcex } from '@ediconvert/core';
+import { translateToOcex, type OcexDocument } from '@ediconvert/core';
 
 const PORT = parseInt(process.env.EDI_PORT || '3000', 10);
 const DB_PATH = process.env.EDI_DB_PATH || './ediconvert.db';
@@ -26,8 +26,8 @@ if (INBOX_DIR && PROCESSED_DIR) {
       storage.saveDocument({
         id: `${doc.type}-${Date.now()}`,
         type: doc.type,
-        partnerId: (doc as any).sender?.id || 'unknown',
-        data: doc as any,
+        partnerId: doc.sender.id || 'unknown',
+        data: doc as unknown as Record<string, unknown>,
         rawEdi: raw,
       });
       await webhookManager.deliver(`${doc.type}.received`, doc as unknown as Record<string, unknown>);

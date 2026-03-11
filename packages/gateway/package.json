@@ -2,18 +2,42 @@
   "name": "@ediconvert/gateway",
   "version": "0.1.0",
   "description": "Self-hostable EDI gateway server",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "main": "./dist/lib.js",
+  "types": "./dist/lib.d.ts",
+  "bin": {
+    "ediconvert-gateway": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/lib.js",
+      "require": "./dist/lib.cjs",
+      "types": "./dist/lib.d.ts"
+    },
+    "./server": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts",
-    "dev": "tsup src/index.ts --format cjs,esm --dts --watch"
+    "build": "tsup src/lib.ts src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/lib.ts src/index.ts --format cjs,esm --dts --watch"
   },
   "dependencies": {
     "@ediconvert/core": "*",
-    "express": "^4.21.0",
+    "bcrypt": "^5.1.0",
     "better-sqlite3": "^11.0.0",
-    "bcrypt": "^5.1.0"
+    "express": "^4.21.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/better-sqlite3": "^7.0.0",
+    "@types/express": "^5.0.6",
+    "@types/supertest": "^7.2.0",
+    "supertest": "^7.2.2"
+  }
 }

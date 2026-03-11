@@ -3,11 +3,11 @@ import type { Storage } from './storage.js';
 
 export function addDashboardRoutes(app: Express, storage: Storage): void {
   app.get('/', (req, res) => {
-    const invoiceCount = storage.listDocuments({ type: 'invoice', limit: 0 }).length;
-    const orderCount = storage.listDocuments({ type: 'order', limit: 0 }).length;
-    const catalogCount = storage.listDocuments({ type: 'catalog', limit: 0 }).length;
-    const shipmentCount = storage.listDocuments({ type: 'shipment', limit: 0 }).length;
-    const acknowledgmentCount = storage.listDocuments({ type: 'acknowledgment', limit: 0 }).length;
+    const invoiceCount = storage.countDocuments({ type: 'invoice' });
+    const orderCount = storage.countDocuments({ type: 'order' });
+    const catalogCount = storage.countDocuments({ type: 'catalog' });
+    const shipmentCount = storage.countDocuments({ type: 'shipment' });
+    const acknowledgmentCount = storage.countDocuments({ type: 'acknowledgment' });
     const recentDocs = storage.listDocuments({ limit: 10 });
 
     res.send(`<!DOCTYPE html>
