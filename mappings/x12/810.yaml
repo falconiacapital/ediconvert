@@ -1,0 +1,61 @@
+# mappings/x12/810.yaml
+transactionSet: "810"
+ocexType: "invoice"
+fields:
+  - segment: BIG
+    element: 0
+    field: documentDate
+    transform: date
+  - segment: BIG
+    element: 1
+    field: invoiceNumber
+  - segment: BIG
+    element: 2
+    field: purchaseOrderRef
+  - segment: N1
+    element: 1
+    field: sender.name
+    qualifier: "SE"
+  - segment: N1
+    element: 3
+    field: sender.id
+    qualifier: "SE"
+  - segment: N1
+    element: 1
+    field: receiver.name
+    qualifier: "BY"
+  - segment: N1
+    element: 3
+    field: receiver.id
+    qualifier: "BY"
+  - segment: TDS
+    element: 0
+    field: total
+    transform: number
+  - segment: CUR
+    element: 1
+    field: currency
+lineItems:
+  loopSegment: IT1
+  fields:
+    - segment: IT1
+      element: 0
+      field: lineNumber
+      transform: number
+    - segment: IT1
+      element: 1
+      field: quantity
+      transform: number
+    - segment: IT1
+      element: 2
+      field: unitOfMeasure
+    - segment: IT1
+      element: 3
+      field: unitPrice
+      transform: number
+    - segment: IT1
+      element: 6
+      field: sku
+    - segment: PID
+      element: 4
+      field: description
