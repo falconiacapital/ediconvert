@@ -1,7 +1,7 @@
 # EDIConvert
 
+[![CI](https://github.com/falconiacapital/ediconvert/actions/workflows/ci.yml/badge.svg)](https://github.com/falconiacapital/ediconvert/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![npm version](https://img.shields.io/badge/npm-%40ediconvert%2Fsdk-orange)](https://www.npmjs.com/package/@ediconvert/sdk)
 
 EDIConvert is the developer-friendly toolkit for working with X12 EDI — the decades-old B2B data format still used by retailers, logistics providers, and healthcare systems worldwide. It translates legacy EDI (810, 850, 832, 856, 997) to and from **OCEX** (Open Commerce Exchange), a clean JSON-over-REST protocol designed to replace fixed-width flat files with something humans can actually read and debug.
 
@@ -66,14 +66,16 @@ import { readFileSync } from 'node:fs';
 
 const edi = new EDIConvert();
 
-// Parse EDI → OCEX JSON
 const raw = readFileSync('./invoice.edi', 'utf-8');
-const invoice = await edi.parse(raw);
-console.log(invoice.sender.name);   // "Acme Corp"
-console.log((invoice as any).total); // 1234.56
+const doc = await edi.parse(raw);
 
-// Generate EDI ← OCEX JSON
-const x12 = await edi.generate(invoice);
+if (doc.type === 'invoice') {
+  console.log(doc.sender.name);   // "Acme Corp"
+  console.log(doc.total);         // 1234.56
+}
+
+// Generate EDI from OCEX JSON
+const x12 = await edi.generate(doc);
 console.log(x12); // ISA*00*...
 ```
 
@@ -155,15 +157,11 @@ The gateway is a self-contained Express server backed by SQLite. Deploy it anywh
 ### Starting the gateway
 
 ```bash
-EDI_PORT=3000 EDI_DB_PATH=./data/edi.db node packages/gateway/src/index.js
-```
+# Development
+npx tsx packages/gateway/src/index.ts
 
-Or with Docker:
-
-```bash
-docker run -p 3000:3000 -v $(pwd)/data:/data \
-  -e EDI_DB_PATH=/data/edi.db \
-  ediconvert/gateway
+# Production (after npm run build)
+node packages/gateway/dist/index.js
 ```
 
 ### Dashboard
@@ -173,10 +171,14 @@ Once running, visit `http://localhost:3000` for a real-time document dashboard s
 ### API key management
 
 ```bash
-# Create a key (via the gateway's auth manager)
-curl -X POST http://localhost:3000/v1/keys \
-  -H 'X-API-Key: <admin-key>' \
-  -d '{ "label": "partner-acme", "partnerScope": "ACME" }'
+# Create an API key
+ediconvert keys create --db=./ediconvert.db
+
+# Create a partner-scoped key
+ediconvert keys create partner-key --partner=ACME --db=./ediconvert.db
+
+# List keys
+ediconvert keys list --db=./ediconvert.db
 ```
 
 All API endpoints require the key in the `X-API-Key` header.

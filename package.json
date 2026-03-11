@@ -11,6 +11,9 @@
     "lint": "eslint 'packages/*/src/**/*.ts'",
     "format": "prettier --write 'packages/*/src/**/*.ts'"
   },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "eslint": "^9.0.0",
